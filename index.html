@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>FinFlow | Gestão Financeira, Metas & Lembretes</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            black: '#000000',
+            brand: {
+              card: '#0c0c0e',
+              border: '#1c1c22',
+              accent: '#10b981',
+              danger: '#f43f5e',
+              purple: '#a855f7',
+              blue: '#3b82f6',
+              amber: '#f59e0b',
+              love: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      background-color: #000000;
+      color: #fafafa;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    }
+    
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1c1c22;
+      border-radius: 9999px;
+    }
+
+    .clean-card {
+      background-color: #0c0c0f;
+      border: 1px solid #1c1c22;
+      border-radius: 1rem;
+      transition: all 0.15s ease;
+    }
+    .clean-card:hover {
+      border-color: #272730;
+    }
+
+    /* Love Background Hero */
+    .love-hero {
+      position: relative;
+      background-image: url('assets/meu-maior-gasto.jpg');
+      background-size: cover;
+      background-position: center 30%;
+      background-repeat: no-repeat;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .love-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.85) 60%, #000000 100%);
+      backdrop-filter: blur(2px);
+    }
+
+    @keyframes pulseHeart {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.18); }
+    }
+    .pulse-heart {
+      display: inline-block;
+      animation: pulseHeart 1.5s infinite ease-in-out;
+    }
+
+    .toast-anim {
+      animation: slideUp 0.25s ease-out forwards;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    button, .touch-btn {
+      touch-action: manipulation;
+    }
+    button:active, .touch-btn:active {
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-black flex flex-col antialiased selection:bg-zinc-800 selection:text-white">
+
+  <!-- Minimal Header -->
+  <header class="sticky top-0 z-30 border-b border-[#141417] bg-black/90 backdrop-blur-md">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('dashboard')">
+        <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+          <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <span class="font-extrabold text-sm sm:text-base text-white tracking-tight">FinFlow</span>
+      </div>
+
+      <!-- Desktop Navigation Tabs (Hidden on mobile) -->
+      <nav class="hidden sm:flex items-center gap-1 bg-[#09090b] p-1 rounded-xl border border-[#18181c]">
+        <button id="navDeskDashboard" onclick="switchView('dashboard')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-zinc-900 transition">
+          Painel
+        </button>
+        <button id="navDeskSummary" onclick="switchView('summary')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition">
+          Resumo Mensal
+        </button>
+        <button id="navDeskGoals" onclick="switchView('goals')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition">
+          Metas
+        </button>
+        <button id="navDeskReminders" onclick="switchView('reminders')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition">
+          Lembretes
+        </button>
+        <button id="navDeskLove" onclick="switchView('love')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 transition flex items-center gap-1">
+          <span class="pulse-heart text-[11px]">❤️</span>
+          <span>Meu Maior Gasto</span>
+        </button>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button id="backupBtn" onclick="openBackupModal()" title="Salvar / Restaurar Dados" class="p-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="hidden sm:inline">Backup</span>
+        </button>
+
+        <button id="voiceBtn" title="Comando de Voz" class="p-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition flex items-center gap-1.5">
+          <i data-lucide="mic" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden sm:inline">Voz</span>
+        </button>
+
+        <button id="mainActionBtn" class="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs sm:text-sm px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4 stroke-[3]"></i>
+          <span id="mainActionLabel">Nova Despesa</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-5 sm:py-7 space-y-6">
+
+    <!-- ============================================== -->
+    <!-- VIEW 1: DASHBOARD                              -->
+    <!-- ============================================== -->
+    <div id="viewDashboard" class="space-y-5">
+      
+      <!-- Month Filter Bar (Atualiza Todo Mês Automaticamente) -->
+      <div class="clean-card p-3 sm:p-3.5 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <i data-lucide="calendar" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+          <span class="text-xs text-zinc-400 font-medium hidden sm:inline">Período de Análise:</span>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <select id="dashboardMonthFilter" onchange="changeDashboardMonth(this.value)" class="bg-black border border-zinc-800 text-white text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-500 transition">
+            <!-- Populated dynamically with current and previous months -->
+          </select>
+          <button onclick="switchView('summary')" title="Ver Relatório Fechado do Mês" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs px-2.5 py-1.5 rounded-xl font-medium transition flex items-center gap-1">
+            <i data-lucide="file-text" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="hidden sm:inline">Resumo do Mês</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Top Balance Card -->
+      <div class="clean-card p-5 sm:p-6 relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Saldo do Período</span>
+              <span id="periodBadge" class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20"></span>
+            </div>
+            <div id="totalBalance" class="text-3xl sm:text-4xl font-extrabold text-white mt-1 tracking-tight">R$ 0,00</div>
+            <div id="balanceSavingsRate" class="text-xs text-zinc-500 mt-1">Nenhum lançamento registrado</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5 sm:flex sm:items-center sm:gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-zinc-900">
+            <div class="bg-black/60 border border-zinc-900 rounded-xl px-3.5 py-2.5">
+              <div class="text-[10px] text-zinc-500 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Receitas
+              </div>
+              <div id="totalIncome" class="text-sm sm:text-base font-bold text-emerald-400 mt-0.5">R$ 0,00</div>
+            </div>
+
+            <div class="bg-black/60 border border-zinc-900 rounded-xl px-3.5 py-2.5">
+              <div class="text-[10px] text-zinc-500 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Despesas
+              </div>
+              <div id="totalExpense" class="text-sm sm:text-base font-bold text-rose-400 mt-0.5">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Romantic Teaser Card -->
+      <div onclick="switchView('love')" class="clean-card p-3.5 sm:p-4 border-rose-500/20 hover:border-rose-500/40 cursor-pointer transition flex items-center justify-between gap-3 group">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+            <i data-lucide="heart" class="w-4 h-4 fill-rose-500/30"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>Meu Maior Gasto</span>
+              <span class="pulse-heart text-[10px]">❤️</span>
+            </div>
+            <div class="text-[11px] text-zinc-500">Total investido nela neste mês: <strong id="teaserLoveAmount" class="text-rose-300">R$ 0,00</strong></div>
+          </div>
+        </div>
+        <div class="text-xs text-rose-400 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition shrink-0">
+          <span>Ver</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        </div>
+      </div>
+
+      <!-- Transactions Section -->
+      <div class="clean-card p-4 sm:p-5 space-y-4">
+        
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-white">Lançamentos</h2>
+            <span id="txCountBadge" class="text-[10px] text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-full">0 itens</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <select id="typeFilter" onchange="renderDashboard()" class="bg-black border border-zinc-800 text-zinc-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none">
+              <option value="ALL">Todos os Tipos</option>
+              <option value="EXPENSE">Despesas</option>
+              <option value="INCOME">Receitas</option>
+            </select>
+
+            <button onclick="openCategoryManageModal()" class="text-xs bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition">
+              <i data-lucide="tag" class="w-3 h-3 text-purple-400"></i>
+              <span class="hidden sm:inline">Categorias</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="txList" class="divide-y divide-zinc-900"></div>
+
+        <div id="txEmptyState" class="py-10 flex flex-col items-center justify-center text-center text-zinc-600">
+          <i data-lucide="inbox" class="w-8 h-8 stroke-1 text-zinc-700 mb-2"></i>
+          <p class="text-xs font-semibold text-zinc-400">Nenhum lançamento neste mês</p>
+          <p class="text-[11px] text-zinc-600 mt-0.5">Toque em "Nova Despesa" para registrar.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- VIEW 2: RESUMO DE FIM DE MÊS & FECHAMENTO     -->
+    <!-- ============================================== -->
+    <div id="viewSummary" class="hidden space-y-5">
+      
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i>
+            <span>Fechamento & Resumo Mensal</span>
+          </h2>
+          <p class="text-xs text-zinc-500">Balanço consolidado, gastos por categoria e sobra do mês.</p>
+        </div>
+
+        <!-- Month Picker for Summary -->
+        <select id="summaryMonthPicker" onchange="changeSummaryMonth(this.value)" class="bg-zinc-900 border border-zinc-800 text-amber-300 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+
+      <!-- Overview Cards of Selected Month -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <div class="clean-card p-3.5 border-emerald-500/20">
+          <span class="text-[10px] text-zinc-500 font-semibold uppercase">Total Recebido</span>
+          <div id="sumTotalIncome" class="text-base sm:text-lg font-black text-emerald-400 mt-0.5">R$ 0,00</div>
+        </div>
+
+        <div class="clean-card p-3.5 border-rose-500/20">
+          <span class="text-[10px] text-zinc-500 font-semibold uppercase">Total Gasto</span>
+          <div id="sumTotalExpense" class="text-base sm:text-lg font-black text-rose-400 mt-0.5">R$ 0,00</div>
+        </div>
+
+        <div class="clean-card p-3.5 border-blue-500/20">
+          <span class="text-[10px] text-zinc-500 font-semibold uppercase">Saldo Restante</span>
+          <div id="sumBalance" class="text-base sm:text-lg font-black text-white mt-0.5">R$ 0,00</div>
+        </div>
+
+        <div class="clean-card p-3.5 border-purple-500/20">
+          <span class="text-[10px] text-zinc-500 font-semibold uppercase">Taxa Poupada</span>
+          <div id="sumSavingsRate" class="text-base sm:text-lg font-black text-purple-400 mt-0.5">0%</div>
+        </div>
+      </div>
+
+      <!-- Categories Breakdown List for Month -->
+      <div class="clean-card p-4 sm:p-5 space-y-3">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
+          <span>Onde você mais gastou neste mês</span>
+          <span id="sumCategoriesCount" class="text-[10px] text-zinc-500">0 categorias</span>
+        </h3>
+
+        <div id="sumCategoriesBreakdown" class="space-y-3 pt-1">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div id="sumCategoriesEmpty" class="py-8 text-center text-xs text-zinc-600 hidden">
+          Nenhuma despesa registrada neste mês para analisar.
+        </div>
+      </div>
+
+      <!-- Monthly History Comparison (Todos os meses anteriores) -->
+      <div class="clean-card p-4 sm:p-5 space-y-3">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="history" class="w-3.5 h-3.5 text-zinc-400"></i>
+          <span>Histórico de Todos os Meses</span>
+        </h3>
+        <p class="text-[11px] text-zinc-500">Veja o acumulado de cada mês fechado para comparar sua evolução:</p>
+
+        <div id="allMonthsHistoryList" class="divide-y divide-zinc-900 pt-1">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- VIEW 3: METAS                                  -->
+    <!-- ============================================== -->
+    <div id="viewGoals" class="hidden space-y-5">
+      
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white">Metas & Objetivos</h2>
+          <p class="text-xs text-zinc-500">Economias e planos em andamento.</p>
+        </div>
+
+        <button onclick="openNewGoalModal()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Nova Meta</span>
+        </button>
+      </div>
+
+      <div id="goalsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4"></div>
+
+      <div id="goalsEmptyState" class="clean-card py-12 flex flex-col items-center justify-center text-center text-zinc-600">
+        <i data-lucide="target" class="w-8 h-8 stroke-1 text-zinc-700 mb-2"></i>
+        <p class="text-xs font-semibold text-zinc-400">Nenhuma meta criada ainda</p>
+        <p class="text-[11px] text-zinc-600 mt-0.5">Defina sua meta para acompanhar o progresso.</p>
+        <button onclick="openNewGoalModal()" class="mt-4 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold px-4 py-2 rounded-xl transition">
+          + Criar Primeira Meta
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- VIEW 4: LEMBRETES                              -->
+    <!-- ============================================== -->
+    <div id="viewReminders" class="hidden space-y-5">
+      
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white">Lembretes & Hábitos</h2>
+          <p class="text-xs text-zinc-500">O que você tem que fazer e o que NÃO deve fazer.</p>
+        </div>
+
+        <button onclick="openReminderModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Novo Lembrete</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-1.5 bg-[#09090b] p-1 rounded-xl border border-[#18181c] w-fit text-xs">
+        <button id="remFilterAll" onclick="setReminderFilter('ALL')" class="px-3 py-1.5 rounded-lg font-semibold text-white bg-zinc-900 transition">
+          Todos
+        </button>
+        <button id="remFilterDo" onclick="setReminderFilter('DO')" class="px-3 py-1.5 rounded-lg font-semibold text-zinc-400 hover:text-emerald-400 transition flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Fazer
+        </button>
+        <button id="remFilterDont" onclick="setReminderFilter('DONT')" class="px-3 py-1.5 rounded-lg font-semibold text-zinc-400 hover:text-rose-400 transition flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> NÃO Fazer
+        </button>
+      </div>
+
+      <div id="remindersList" class="space-y-2.5"></div>
+
+      <div id="remindersEmptyState" class="clean-card py-12 flex flex-col items-center justify-center text-center text-zinc-600">
+        <i data-lucide="check-square" class="w-8 h-8 stroke-1 text-zinc-700 mb-2"></i>
+        <p class="text-xs font-semibold text-zinc-400">Nenhum lembrete cadastrado</p>
+        <p class="text-[11px] text-zinc-600 mt-0.5">Adicione o que você deve ou não deve fazer no dia a dia.</p>
+        <button onclick="openReminderModal()" class="mt-4 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold px-4 py-2 rounded-xl transition">
+          + Criar Lembrete
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- VIEW 5: MEU MAIOR GASTO ❤️                     -->
+    <!-- ============================================== -->
+    <div id="viewLove" class="hidden space-y-5">
+      
+      <div class="love-hero p-5 sm:p-7 relative">
+        <div class="love-overlay"></div>
+
+        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-rose-400">
+              <span class="pulse-heart text-sm">❤️</span>
+              <span>Página Exclusiva</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Meu Maior Gasto ❤️</h1>
+            <p class="text-xs text-zinc-300">O melhor investimento de todos os dias.</p>
+          </div>
+
+          <button onclick="openLoveModal()" class="self-start sm:self-auto bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-rose-600/30 flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Adicionar Mimo</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        <div class="clean-card p-3.5 sm:p-4 border-rose-500/20">
+          <span class="text-[10px] sm:text-[11px] text-zinc-500 font-medium">Total Investido Nela</span>
+          <div id="loveTotalSpent" class="text-lg sm:text-xl font-extrabold text-rose-300 mt-0.5">R$ 0,00</div>
+        </div>
+
+        <div class="clean-card p-3.5 sm:p-4 border-rose-500/20">
+          <span class="text-[10px] sm:text-[11px] text-zinc-500 font-medium">Momentos / Mimos</span>
+          <div id="loveTotalCount" class="text-lg sm:text-xl font-extrabold text-white mt-0.5">0</div>
+        </div>
+
+        <div class="clean-card p-3.5 sm:p-4 border-rose-500/20 col-span-2 sm:col-span-1">
+          <span class="text-[10px] sm:text-[11px] text-zinc-500 font-medium">Avaliação</span>
+          <div class="text-lg sm:text-xl font-extrabold text-amber-300 mt-0.5">10 / 10 ⭐️</div>
+        </div>
+      </div>
+
+      <div class="clean-card p-4 sm:p-5 space-y-3 border-rose-500/20">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider">Histórico de Mimos & Encontros</h3>
+        <div id="loveMomentsList" class="divide-y divide-zinc-900"></div>
+
+        <div id="loveEmptyState" class="py-8 flex flex-col items-center justify-center text-center text-zinc-600">
+          <p class="text-xs text-zinc-400">Nenhum mimo ou jantar registrado ainda.</p>
+          <button onclick="openLoveModal()" class="mt-2 text-xs text-rose-400 font-semibold hover:underline">
+            + Adicionar primeiro momento
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MOBILE BOTTOM BAR                              -->
+  <!-- ============================================== -->
+  <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/95 border-t border-[#18181c] backdrop-blur-lg px-2 py-1.5 flex items-center justify-around">
+    <button onclick="switchView('dashboard')" id="navMobileDashboard" class="flex flex-col items-center gap-1 p-1.5 text-emerald-400 font-bold transition">
+      <i data-lucide="wallet" class="w-5 h-5"></i>
+      <span class="text-[10px]">Painel</span>
+    </button>
+    <button onclick="switchView('summary')" id="navMobileSummary" class="flex flex-col items-center gap-1 p-1.5 text-zinc-400 transition">
+      <i data-lucide="pie-chart" class="w-5 h-5"></i>
+      <span class="text-[10px]">Resumo</span>
+    </button>
+    <button onclick="switchView('goals')" id="navMobileGoals" class="flex flex-col items-center gap-1 p-1.5 text-zinc-400 transition">
+      <i data-lucide="target" class="w-5 h-5"></i>
+      <span class="text-[10px]">Metas</span>
+    </button>
+    <button onclick="switchView('reminders')" id="navMobileReminders" class="flex flex-col items-center gap-1 p-1.5 text-zinc-400 transition">
+      <i data-lucide="check-square" class="w-5 h-5"></i>
+      <span class="text-[10px]">Lembretes</span>
+    </button>
+    <button onclick="switchView('love')" id="navMobileLove" class="flex flex-col items-center gap-1 p-1.5 text-zinc-400 transition">
+      <span class="text-sm">❤️</span>
+      <span class="text-[10px]">Ela</span>
+    </button>
+  </nav>
+
+  <!-- ============================================== -->
+  <!-- MODAL: NOVA TRANSAÇÃO                          -->
+  <!-- ============================================== -->
+  <div id="transactionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm hidden p-4">
+    <div class="bg-[#0e0e12] border border-zinc-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-900">
+        <h3 class="text-sm font-bold text-white">Nova Transação</h3>
+        <button type="button" onclick="closeTransactionModal()" class="text-zinc-500 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="txForm" class="mt-4 space-y-3.5">
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="btnTypeExpense" onclick="setTxType('EXPENSE')" class="py-2 text-xs font-bold rounded-xl border border-rose-500/50 bg-rose-500/10 text-rose-400 transition">
+            Despesa (-)
+          </button>
+          <button type="button" id="btnTypeIncome" onclick="setTxType('INCOME')" class="py-2 text-xs font-bold rounded-xl border border-zinc-800 bg-black text-zinc-400 transition">
+            Receita (+)
+          </button>
+        </div>
+        <input type="hidden" id="txTypeInput" value="EXPENSE">
+
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Descrição</label>
+          <input type="text" id="txDescInput" required placeholder="Ex: Mercado, Almoço, Gasolina" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-zinc-700">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" min="0.01" id="txAmountInput" required placeholder="0,00" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-zinc-700">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Data</label>
+            <input type="date" id="txDateInput" required class="w-full bg-black border border-zinc-800 rounded-xl px-2.5 py-2 text-xs text-zinc-100 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[11px] font-semibold text-zinc-400">Categoria</label>
+            <button type="button" onclick="openCategoryManageModal()" class="text-[10px] text-purple-400 hover:underline flex items-center gap-1">
+              + Nova Categoria
+            </button>
+          </div>
+          <select id="txCategoryInput" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none">
+            <!-- Dynamically populated categories -->
+          </select>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeTransactionModal()" class="px-3 py-2 text-xs text-zinc-400 hover:text-white">Cancelar</button>
+          <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2 rounded-xl transition">Salvar Lançamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: GERENCIAR E ADICIONAR CATEGORIAS        -->
+  <!-- ============================================== -->
+  <div id="categoryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm hidden p-4">
+    <div class="bg-[#0e0e12] border border-zinc-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-900">
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+          <i data-lucide="tag" class="w-4 h-4 text-purple-400"></i>
+          <span>Gerenciar Categorias</span>
+        </h3>
+        <button type="button" onclick="closeCategoryManageModal()" class="text-zinc-500 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Add New Category Form -->
+      <form id="newCategoryForm" class="space-y-2.5">
+        <label class="block text-[11px] font-semibold text-zinc-400">Criar Nova Categoria</label>
+        <div class="flex items-center gap-2">
+          <input type="text" id="newCategoryNameInput" required placeholder="Ex: Farmácia, Cinema, Pet" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-purple-500">
+          <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition shrink-0">
+            Adicionar
+          </button>
+        </div>
+      </form>
+
+      <!-- Existing Categories List -->
+      <div class="space-y-2 pt-2 border-t border-zinc-900">
+        <label class="block text-[11px] font-semibold text-zinc-400">Categorias Atuais</label>
+        <div id="categoryTagsList" class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="pt-2 text-right">
+        <button type="button" onclick="closeCategoryManageModal()" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold px-4 py-2 rounded-xl border border-zinc-800 transition">
+          Concluído
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: NOVA META                               -->
+  <!-- ============================================== -->
+  <div id="goalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm hidden p-4">
+    <div class="bg-[#0e0e12] border border-zinc-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-900">
+        <h3 class="text-sm font-bold text-white">Nova Meta Financeira</h3>
+        <button type="button" onclick="closeGoalModal()" class="text-zinc-500 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="goalForm" class="mt-4 space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Nome do Objetivo</label>
+          <input type="text" id="goalTitleInput" required placeholder="Ex: Reserva, Viagem com Ela, Carro" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-purple-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Valor Alvo (R$)</label>
+            <input type="number" step="0.01" min="0.01" id="goalTargetInput" required placeholder="5000" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-purple-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Já Guardado (R$)</label>
+            <input type="number" step="0.01" min="0" id="goalCurrentInput" value="0" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-purple-500">
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeGoalModal()" class="px-3 py-2 text-xs text-zinc-400 hover:text-white">Cancelar</button>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">Criar Meta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: DEPOSITAR NA META                       -->
+  <!-- ============================================== -->
+  <div id="depositModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm hidden p-4">
+    <div class="bg-[#0e0e12] border border-purple-500/30 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-900">
+        <h3 id="depositGoalTitle" class="text-sm font-bold text-white">Guardar na Meta</h3>
+        <button type="button" onclick="closeDepositModal()" class="text-zinc-500 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="depositForm" class="mt-4 space-y-3.5">
+        <input type="hidden" id="depositGoalId">
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Quanto você guardou hoje? (R$)</label>
+          <input type="number" step="0.01" min="0.01" id="depositAmountInput" required placeholder="Ex: 100,00" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-purple-500">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeDepositModal()" class="px-3 py-2 text-xs text-zinc-400 hover:text-white">Cancelar</button>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">Adicionar Saldo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: NOVO LEMBRETE (FAZER / NÃO FAZER)       -->
+  <!-- ============================================== -->
+  <div id="reminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm hidden p-4">
+    <div class="bg-[#0e0e12] border border-blue-500/30 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-900">
+        <h3 class="text-sm font-bold text-white">Novo Lembrete / Hábito</h3>
+        <button type="button" onclick="closeReminderModal()" class="text-zinc-500 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="reminderForm" class="mt-4 space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1.5">Tipo de Lembrete</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btnRemDo" onclick="setReminderType('DO')" class="py-2 text-xs font-bold rounded-xl border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 transition flex items-center justify-center gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              <span>Tenho que fazer</span>
+            </button>
+            <button type="button" id="btnRemDont" onclick="setReminderType('DONT')" class="py-2 text-xs font-bold rounded-xl border border-zinc-800 bg-black text-zinc-400 transition flex items-center justify-center gap-1.5">
+              <i data-lucide="ban" class="w-3.5 h-3.5"></i>
+              <span>NÃO fazer</span>
+            </button>
+          </div>
+          <input type="hidden" id="reminderTypeInput" value="DO">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1">O que é?</label>
+          <input type="text" id="reminderTitleInput" required placeholder="Ex: Pagar fatura do cartão / Não comprar por impulso" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Data / Prazo (Opcional)</label>
+          <input type="date" id="reminderDateInput" class="w-full bg-black border border-zinc-800 rounded-xl px-2.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeReminderModal()" class="px-3 py-2 text-xs text-zinc-400 hover:text-white">Cancelar</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">Salvar Lembrete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: NOVO MIMO COM ELA ❤️                    -->
+  <!-- ============================================== -->
+  <div id="loveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm hidden p-4">
+    <div class="bg-[#0e0e12] border border-rose-500/30 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-900">
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+          <span>Novo Mimo com Ela</span>
+          <span class="pulse-heart text-xs">❤️</span>
+        </h3>
+        <button type="button" onclick="closeLoveModal()" class="text-zinc-500 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="loveForm" class="mt-4 space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1">O que foi esse momento?</label>
+          <input type="text" id="loveDescInput" required placeholder="Ex: Jantar italiano, Cinema, Buquê" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-rose-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" min="0.01" id="loveAmountInput" required placeholder="0,00" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Data</label>
+            <input type="date" id="loveDateInput" required class="w-full bg-black border border-zinc-800 rounded-xl px-2.5 py-2 text-xs text-zinc-100 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Recadinho ou Memória (Opcional)</label>
+          <input type="text" id="loveNoteInput" placeholder="Ex: Ela amou o jantar! / Sorriso lindo" class="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-rose-500">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeLoveModal()" class="px-3 py-2 text-xs text-zinc-400 hover:text-white">Cancelar</button>
+          <button type="submit" class="bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs px-4 py-2 rounded-xl transition">Salvar Mimo ❤️</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: BACKUP E RESTAURAÇÃO DE DADOS           -->
+  <!-- ============================================== -->
+  <div id="backupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm hidden p-4">
+    <div class="bg-[#0e0e12] border border-zinc-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-900">
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-4 h-4 text-blue-400"></i>
+          <span>Segurança & Backup dos Dados</span>
+        </h3>
+        <button type="button" onclick="closeBackupModal()" class="text-zinc-500 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-zinc-400">
+        Seus dados ficam salvos na memória do seu navegador. Baixe um arquivo de segurança para nunca perder nada ou restaurar quando quiser:
+      </p>
+
+      <!-- Download Backup Button -->
+      <div class="space-y-2">
+        <button type="button" onclick="downloadBackup()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Baixar Backup Completo (.json)</span>
+        </button>
+        <span class="text-[10px] text-zinc-500 block text-center">Salva todas as despesas, metas, lembretes e mimos.</span>
+      </div>
+
+      <!-- Restore Backup Section -->
+      <div class="pt-3 border-t border-zinc-900 space-y-2">
+        <label class="block text-[11px] font-semibold text-zinc-400">Restaurar de um Arquivo de Backup</label>
+        <input type="file" id="backupFileInput" accept=".json" class="hidden" onchange="restoreBackupFromFile(event)">
+        <button type="button" onclick="document.getElementById('backupFileInput').click()" class="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2">
+          <i data-lucide="upload" class="w-4 h-4 text-emerald-400"></i>
+          <span>Carregar Arquivo de Backup</span>
+        </button>
+      </div>
+
+      <div class="pt-2 text-right">
+        <button type="button" onclick="closeBackupModal()" class="text-xs text-zinc-400 hover:text-white px-3 py-1.5">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-20 sm:bottom-5 right-5 z-50 hidden bg-[#121216] border border-zinc-800 text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 toast-anim text-xs">
+    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toastMsg">Operação realizada.</span>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Storage Keys
+    const KEY_TX = 'finflow_black_tx_v2';
+    const KEY_GOALS = 'finflow_black_goals_v1';
+    const KEY_LOVE = 'finflow_black_love_v1';
+    const KEY_REMINDERS = 'finflow_black_reminders_v1';
+    const KEY_CATEGORIES = 'finflow_black_categories_v1';
+
+    // Default Categories
+    const DEFAULT_CATEGORIES = [
+      'Alimentação',
+      'Meu Maior Gasto ❤️',
+      'Transporte',
+      'Moradia',
+      'Lazer',
+      'Saúde',
+      'Educação',
+      'Salário',
+      'Investimentos',
+      'Outros'
+    ];
+
+    let transactions = JSON.parse(localStorage.getItem(KEY_TX) || '[]');
+    let goals = JSON.parse(localStorage.getItem(KEY_GOALS) || '[]');
+    let loveMoments = JSON.parse(localStorage.getItem(KEY_LOVE) || '[]');
+    let reminders = JSON.parse(localStorage.getItem(KEY_REMINDERS) || '[]');
+    let categories = JSON.parse(localStorage.getItem(KEY_CATEGORIES) || JSON.stringify(DEFAULT_CATEGORIES));
+
+    // Get current YYYY-MM
+    function getCurrentMonthKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    let selectedDashboardMonth = getCurrentMonthKey();
+    let selectedSummaryMonth = getCurrentMonthKey();
+
+    let currentView = 'dashboard';
+    let currentReminderFilter = 'ALL';
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    const formatCurrency = (val) => {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+    };
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    };
+
+    function formatMonthLabel(monthKey) {
+      if (monthKey === 'ALL') return 'Todo o Histórico (Geral)';
+      const [y, m] = monthKey.split('-');
+      const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const name = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
+    function saveData() {
+      localStorage.setItem(KEY_TX, JSON.stringify(transactions));
+      localStorage.setItem(KEY_GOALS, JSON.stringify(goals));
+      localStorage.setItem(KEY_LOVE, JSON.stringify(loveMoments));
+      localStorage.setItem(KEY_REMINDERS, JSON.stringify(reminders));
+      localStorage.setItem(KEY_CATEGORIES, JSON.stringify(categories));
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+    }
+
+    // Switch View Tabs
+    function switchView(view) {
+      currentView = view;
+      ['viewDashboard', 'viewSummary', 'viewGoals', 'viewReminders', 'viewLove'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+
+      const deskBtns = {
+        dashboard: document.getElementById('navDeskDashboard'),
+        summary: document.getElementById('navDeskSummary'),
+        goals: document.getElementById('navDeskGoals'),
+        reminders: document.getElementById('navDeskReminders'),
+        love: document.getElementById('navDeskLove')
+      };
+      Object.keys(deskBtns).forEach(k => {
+        if (deskBtns[k]) {
+          deskBtns[k].className = k === 'love' 
+            ? 'px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400/80 hover:text-rose-300 transition flex items-center gap-1'
+            : 'px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition';
+        }
+      });
+
+      const mobBtns = {
+        dashboard: document.getElementById('navMobileDashboard'),
+        summary: document.getElementById('navMobileSummary'),
+        goals: document.getElementById('navMobileGoals'),
+        reminders: document.getElementById('navMobileReminders'),
+        love: document.getElementById('navMobileLove')
+      };
+      Object.keys(mobBtns).forEach(k => {
+        if (mobBtns[k]) mobBtns[k].className = 'flex flex-col items-center gap-1 p-1.5 text-zinc-500 transition';
+      });
+
+      const mainBtn = document.getElementById('mainActionBtn');
+      const mainLabel = document.getElementById('mainActionLabel');
+
+      if (view === 'dashboard') {
+        document.getElementById('viewDashboard').classList.remove('hidden');
+        if (deskBtns.dashboard) deskBtns.dashboard.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-zinc-900 transition';
+        if (mobBtns.dashboard) mobBtns.dashboard.className = 'flex flex-col items-center gap-1 p-1.5 text-emerald-400 font-bold transition';
+        mainLabel.textContent = 'Nova Despesa';
+        mainBtn.className = 'flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs sm:text-sm px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-sm';
+      } else if (view === 'summary') {
+        document.getElementById('viewSummary').classList.remove('hidden');
+        if (deskBtns.summary) deskBtns.summary.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-zinc-900 transition';
+        if (mobBtns.summary) mobBtns.summary.className = 'flex flex-col items-center gap-1 p-1.5 text-amber-400 font-bold transition';
+        mainLabel.textContent = 'Nova Despesa';
+        mainBtn.className = 'flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs sm:text-sm px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-sm';
+      } else if (view === 'goals') {
+        document.getElementById('viewGoals').classList.remove('hidden');
+        if (deskBtns.goals) deskBtns.goals.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-zinc-900 transition';
+        if (mobBtns.goals) mobBtns.goals.className = 'flex flex-col items-center gap-1 p-1.5 text-purple-400 font-bold transition';
+        mainLabel.textContent = 'Nova Meta';
+        mainBtn.className = 'flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-sm';
+      } else if (view === 'reminders') {
+        document.getElementById('viewReminders').classList.remove('hidden');
+        if (deskBtns.reminders) deskBtns.reminders.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-zinc-900 transition';
+        if (mobBtns.reminders) mobBtns.reminders.className = 'flex flex-col items-center gap-1 p-1.5 text-blue-400 font-bold transition';
+        mainLabel.textContent = 'Novo Lembrete';
+        mainBtn.className = 'flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-sm';
+      } else if (view === 'love') {
+        document.getElementById('viewLove').classList.remove('hidden');
+        if (deskBtns.love) deskBtns.love.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-rose-600/30 border border-rose-500/40 transition flex items-center gap-1';
+        if (mobBtns.love) mobBtns.love.className = 'flex flex-col items-center gap-1 p-1.5 text-rose-400 font-bold transition';
+        mainLabel.textContent = 'Novo Mimo ❤️';
+        mainBtn.className = 'flex items-center gap-1.5 bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs sm:text-sm px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-sm';
+      }
+
+      renderAll();
+    }
+
+    // Modal Control Functions
+    function openTransactionModal(type = 'EXPENSE') {
+      document.getElementById('txForm').reset();
+      document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
+      setTxType(type);
+      populateCategorySelect();
+      document.getElementById('transactionModal').classList.remove('hidden');
+    }
+    function closeTransactionModal() {
+      document.getElementById('transactionModal').classList.add('hidden');
+    }
+
+    function setTxType(type) {
+      document.getElementById('txTypeInput').value = type;
+      const btnExp = document.getElementById('btnTypeExpense');
+      const btnInc = document.getElementById('btnTypeIncome');
+      if (type === 'EXPENSE') {
+        btnExp.className = 'py-2 text-xs font-bold rounded-xl border border-rose-500/50 bg-rose-500/10 text-rose-400 transition';
+        btnInc.className = 'py-2 text-xs font-bold rounded-xl border border-zinc-800 bg-black text-zinc-400 transition';
+      } else {
+        btnInc.className = 'py-2 text-xs font-bold rounded-xl border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 transition';
+        btnExp.className = 'py-2 text-xs font-bold rounded-xl border border-zinc-800 bg-black text-zinc-400 transition';
+      }
+    }
+
+    // Category Management
+    function openCategoryManageModal() {
+      renderCategoryTags();
+      document.getElementById('newCategoryNameInput').value = '';
+      document.getElementById('categoryModal').classList.remove('hidden');
+    }
+    function closeCategoryManageModal() {
+      document.getElementById('categoryModal').classList.add('hidden');
+      populateCategorySelect();
+    }
+
+    function populateCategorySelect() {
+      const select = document.getElementById('txCategoryInput');
+      const current = select.value;
+      select.innerHTML = '';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+      if (current && categories.includes(current)) select.value = current;
+    }
+
+    function renderCategoryTags() {
+      const list = document.getElementById('categoryTagsList');
+      list.innerHTML = '';
+      categories.forEach(cat => {
+        const isProtected = cat === 'Meu Maior Gasto ❤️' || cat === 'Alimentação';
+        const tag = document.createElement('div');
+        tag.className = 'bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-zinc-200 flex items-center gap-1.5';
+        tag.innerHTML = `
+          <span>${escapeHtml(cat)}</span>
+          ${!isProtected ? `
+            <button type="button" onclick="deleteCategory('${escapeHtml(cat)}')" class="text-zinc-500 hover:text-rose-400 ml-1">
+              &times;
+            </button>
+          ` : ''}
+        `;
+        list.appendChild(tag);
+      });
+    }
+
+    window.deleteCategory = function(catName) {
+      if (confirm(`Excluir a categoria "${catName}"?`)) {
+        categories = categories.filter(c => c !== catName);
+        saveData();
+        renderCategoryTags();
+        populateCategorySelect();
+        renderAll();
+        showToast('Categoria removida.');
+      }
+    };
+
+    function openNewGoalModal() {
+      document.getElementById('goalForm').reset();
+      document.getElementById('goalCurrentInput').value = '0';
+      document.getElementById('goalModal').classList.remove('hidden');
+    }
+    function closeGoalModal() {
+      document.getElementById('goalModal').classList.add('hidden');
+    }
+
+    function openDepositModal(id, title) {
+      document.getElementById('depositGoalId').value = id;
+      document.getElementById('depositGoalTitle').textContent = `Guardar em: ${title}`;
+      document.getElementById('depositAmountInput').value = '';
+      document.getElementById('depositModal').classList.remove('hidden');
+    }
+    function closeDepositModal() {
+      document.getElementById('depositModal').classList.add('hidden');
+    }
+
+    function openReminderModal() {
+      document.getElementById('reminderForm').reset();
+      setReminderType('DO');
+      document.getElementById('reminderModal').classList.remove('hidden');
+    }
+    function closeReminderModal() {
+      document.getElementById('reminderModal').classList.add('hidden');
+    }
+
+    function setReminderType(type) {
+      document.getElementById('reminderTypeInput').value = type;
+      const bDo = document.getElementById('btnRemDo');
+      const bDont = document.getElementById('btnRemDont');
+      if (type === 'DO') {
+        bDo.className = 'py-2 text-xs font-bold rounded-xl border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 transition flex items-center justify-center gap-1.5';
+        bDont.className = 'py-2 text-xs font-bold rounded-xl border border-zinc-800 bg-black text-zinc-400 transition flex items-center justify-center gap-1.5';
+      } else {
+        bDont.className = 'py-2 text-xs font-bold rounded-xl border border-rose-500/50 bg-rose-500/10 text-rose-400 transition flex items-center justify-center gap-1.5';
+        bDo.className = 'py-2 text-xs font-bold rounded-xl border border-zinc-800 bg-black text-zinc-400 transition flex items-center justify-center gap-1.5';
+      }
+    }
+
+    function openLoveModal() {
+      document.getElementById('loveForm').reset();
+      document.getElementById('loveDateInput').value = new Date().toISOString().split('T')[0];
+      document.getElementById('loveModal').classList.remove('hidden');
+    }
+    function closeLoveModal() {
+      document.getElementById('loveModal').classList.add('hidden');
+    }
+
+    // Month Selector Helpers
+    function getAvailableMonths() {
+      const set = new Set();
+      set.add(getCurrentMonthKey()); // Always include current month
+      transactions.forEach(t => {
+        if (t.date && t.date.length >= 7) {
+          set.add(t.date.substring(0, 7));
+        }
+      });
+      return Array.from(set).sort().reverse();
+    }
+
+    function populateMonthDropdowns() {
+      const months = getAvailableMonths();
+
+      // Dashboard month filter
+      const dashSelect = document.getElementById('dashboardMonthFilter');
+      dashSelect.innerHTML = '<option value="ALL">Todo o Histórico (Geral)</option>';
+      months.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = formatMonthLabel(m) + (m === getCurrentMonthKey() ? ' (Atual)' : '');
+        dashSelect.appendChild(opt);
+      });
+      dashSelect.value = selectedDashboardMonth;
+
+      // Summary month picker
+      const sumSelect = document.getElementById('summaryMonthPicker');
+      sumSelect.innerHTML = '';
+      months.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = formatMonthLabel(m);
+        sumSelect.appendChild(opt);
+      });
+      sumSelect.value = selectedSummaryMonth;
+    }
+
+    function changeDashboardMonth(val) {
+      selectedDashboardMonth = val;
+      renderDashboard();
+    }
+
+    function changeSummaryMonth(val) {
+      selectedSummaryMonth = val;
+      renderSummary();
+    }
+
+    // Render Dashboard
+    function renderDashboard() {
+      const badge = document.getElementById('periodBadge');
+      badge.textContent = selectedDashboardMonth === 'ALL' ? 'Geral' : formatMonthLabel(selectedDashboardMonth);
+
+      let income = 0;
+      let expense = 0;
+
+      // Filter transactions by selected month
+      const monthTransactions = transactions.filter(t => {
+        if (selectedDashboardMonth === 'ALL') return true;
+        return t.date && t.date.startsWith(selectedDashboardMonth);
+      });
+
+      monthTransactions.forEach(t => {
+        const val = parseFloat(t.amount || 0);
+        if (t.type === 'INCOME') income += val;
+        else expense += val;
+      });
+
+      const balance = income - expense;
+      const elBal = document.getElementById('totalBalance');
+      elBal.textContent = formatCurrency(balance);
+      elBal.className = `text-3xl sm:text-4xl font-extrabold mt-1 tracking-tight ${balance >= 0 ? 'text-white' : 'text-rose-400'}`;
+
+      document.getElementById('totalIncome').textContent = formatCurrency(income);
+      document.getElementById('totalExpense').textContent = formatCurrency(expense);
+
+      const rate = income > 0 ? Math.max(0, ((income - expense) / income) * 100).toFixed(0) : 0;
+      document.getElementById('balanceSavingsRate').textContent = income > 0 ? `${rate}% poupado neste período` : 'Nenhum lançamento no período';
+
+      // Love Teaser for this month
+      let monthLove = 0;
+      monthTransactions.filter(t => t.category === 'Meu Maior Gasto ❤️').forEach(m => monthLove += parseFloat(m.amount || 0));
+      document.getElementById('teaserLoveAmount').textContent = formatCurrency(monthLove);
+
+      // Render Transaction List
+      const listEl = document.getElementById('txList');
+      const emptyEl = document.getElementById('txEmptyState');
+      const typeFilter = document.getElementById('typeFilter').value;
+
+      const filtered = monthTransactions.filter(t => {
+        if (typeFilter !== 'ALL' && t.type !== typeFilter) return false;
+        return true;
+      });
+
+      document.getElementById('txCountBadge').textContent = `${filtered.length} ite${filtered.length === 1 ? 'm' : 'ns'}`;
+      listEl.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      filtered.forEach(t => {
+        const isIncome = t.type === 'INCOME';
+        const isLove = t.category === 'Meu Maior Gasto ❤️';
+        const row = document.createElement('div');
+        row.className = 'py-3 flex items-center justify-between gap-3 group';
+        row.innerHTML = `
+          <div class="flex items-center gap-2.5 truncate">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (isLove ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-zinc-900 text-zinc-400 border-zinc-800')}">
+              <i data-lucide="${isIncome ? 'arrow-down-left' : (isLove ? 'heart' : 'arrow-up-right')}" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="truncate">
+              <div class="text-xs sm:text-sm font-semibold text-zinc-200 truncate">${escapeHtml(t.description)}</div>
+              <div class="text-[10px] text-zinc-500">${formatDate(t.date)} &bull; ${escapeHtml(t.category)}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5 shrink-0">
+            <span class="text-xs sm:text-sm font-bold ${isIncome ? 'text-emerald-400' : (isLove ? 'text-rose-400' : 'text-zinc-200')}">
+              ${isIncome ? '+' : '-'} ${formatCurrency(t.amount)}
+            </span>
+            <button onclick="deleteTransaction('${t.id}')" title="Excluir" class="text-zinc-600 hover:text-rose-400 p-1.5 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    // Render Month-End Summary (Resumo de Fim de Mês)
+    function renderSummary() {
+      const monthTxs = transactions.filter(t => t.date && t.date.startsWith(selectedSummaryMonth));
+
+      let income = 0;
+      let expense = 0;
+      const catTotals = {};
+
+      monthTxs.forEach(t => {
+        const val = parseFloat(t.amount || 0);
+        if (t.type === 'INCOME') {
+          income += val;
+        } else {
+          expense += val;
+          catTotals[t.category] = (catTotals[t.category] || 0) + val;
+        }
+      });
+
+      const balance = income - expense;
+      const savingsRate = income > 0 ? Math.max(0, ((income - expense) / income) * 100).toFixed(0) : 0;
+
+      document.getElementById('sumTotalIncome').textContent = formatCurrency(income);
+      document.getElementById('sumTotalExpense').textContent = formatCurrency(expense);
+      document.getElementById('sumBalance').textContent = formatCurrency(balance);
+      document.getElementById('sumBalance').className = `text-base sm:text-lg font-black mt-0.5 ${balance >= 0 ? 'text-white' : 'text-rose-400'}`;
+      document.getElementById('sumSavingsRate').textContent = `${savingsRate}%`;
+
+      // Category breakdown
+      const breakdownEl = document.getElementById('sumCategoriesBreakdown');
+      const emptyEl = document.getElementById('sumCategoriesEmpty');
+      const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+
+      document.getElementById('sumCategoriesCount').textContent = `${sortedCats.length} categorias`;
+      breakdownEl.innerHTML = '';
+
+      if (sortedCats.length === 0) {
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+        sortedCats.forEach(([cat, val]) => {
+          const pct = expense > 0 ? ((val / expense) * 100).toFixed(1) : 0;
+          const isLove = cat === 'Meu Maior Gasto ❤️';
+          
+          const bar = document.createElement('div');
+          bar.className = 'space-y-1.5';
+          bar.innerHTML = `
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold ${isLove ? 'text-rose-400 flex items-center gap-1' : 'text-zinc-200'}">
+                ${escapeHtml(cat)} ${isLove ? '<span class="text-xs">❤️</span>' : ''}
+              </span>
+              <div class="text-right">
+                <span class="font-extrabold text-white">${formatCurrency(val)}</span>
+                <span class="text-zinc-500 text-[10px] ml-1">(${pct}%)</span>
+              </div>
+            </div>
+            <div class="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-900">
+              <div class="${isLove ? 'bg-rose-500' : 'bg-amber-400'} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+            </div>
+          `;
+          breakdownEl.appendChild(bar);
+        });
+      }
+
+      // All Months History List
+      const historyList = document.getElementById('allMonthsHistoryList');
+      historyList.innerHTML = '';
+
+      const months = getAvailableMonths();
+      months.forEach(m => {
+        let mInc = 0;
+        let mExp = 0;
+        transactions.filter(t => t.date && t.date.startsWith(m)).forEach(t => {
+          if (t.type === 'INCOME') mInc += parseFloat(t.amount || 0);
+          else mExp += parseFloat(t.amount || 0);
+        });
+        const mBal = mInc - mExp;
+
+        const row = document.createElement('div');
+        row.className = 'py-3 flex items-center justify-between gap-3 text-xs';
+        row.innerHTML = `
+          <div>
+            <div class="font-bold text-white">${formatMonthLabel(m)}</div>
+            <div class="text-[10px] text-zinc-500">Rec: ${formatCurrency(mInc)} &bull; Desp: ${formatCurrency(mExp)}</div>
+          </div>
+          <div class="text-right">
+            <div class="font-black ${mBal >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${formatCurrency(mBal)}</div>
+            <button onclick="changeSummaryMonth('${m}'); document.getElementById('summaryMonthPicker').value='${m}';" class="text-[10px] text-amber-400 hover:underline">
+              Ver Detalhes
+            </button>
+          </div>
+        `;
+        historyList.appendChild(row);
+      });
+    }
+
+    // Render Goals
+    function renderGoals() {
+      const grid = document.getElementById('goalsGrid');
+      const empty = document.getElementById('goalsEmptyState');
+      grid.innerHTML = '';
+
+      if (goals.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      goals.forEach(g => {
+        const cur = parseFloat(g.currentAmount || 0);
+        const tgt = parseFloat(g.targetAmount || 1);
+        const pct = Math.min(100, Math.max(0, (cur / tgt) * 100));
+        const isReached = cur >= tgt;
+
+        const card = document.createElement('div');
+        card.className = 'clean-card p-4 space-y-3 relative overflow-hidden';
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div class="truncate">
+              <span class="text-xs sm:text-sm font-bold text-white truncate block">${escapeHtml(g.title)}</span>
+              <span class="text-[10px] ${isReached ? 'text-emerald-400 font-semibold' : 'text-zinc-500'}">
+                ${isReached ? '🎉 Meta alcançada!' : `Falta ${formatCurrency(tgt - cur)}`}
+              </span>
+            </div>
+            <span class="text-xs font-bold ${isReached ? 'text-emerald-400' : 'text-purple-400'} shrink-0">${pct.toFixed(0)}%</span>
+          </div>
+
+          <div class="w-full bg-zinc-950 rounded-full h-2 overflow-hidden border border-zinc-900">
+            <div class="${isReached ? 'bg-emerald-500' : 'bg-gradient-to-r from-purple-500 to-indigo-500'} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] text-zinc-400">
+            <span class="font-semibold text-zinc-200">${formatCurrency(cur)}</span>
+            <span class="text-zinc-500">Alvo: ${formatCurrency(tgt)}</span>
+          </div>
+
+          <div class="pt-2 border-t border-zinc-900 flex items-center justify-between gap-2">
+            <button onclick="openDepositModal('${g.id}', '${escapeHtml(g.title)}')" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+              <span>Guardar</span>
+            </button>
+            <button onclick="deleteGoal('${g.id}')" class="text-xs text-zinc-500 hover:text-rose-400 p-1.5 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // Render Reminders
+    function setReminderFilter(filter) {
+      currentReminderFilter = filter;
+      const bAll = document.getElementById('remFilterAll');
+      const bDo = document.getElementById('remFilterDo');
+      const bDont = document.getElementById('remFilterDont');
+
+      bAll.className = 'px-3 py-1.5 rounded-lg font-semibold transition ' + (filter === 'ALL' ? 'text-white bg-zinc-900' : 'text-zinc-400 hover:text-white');
+      bDo.className = 'px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1 ' + (filter === 'DO' ? 'text-emerald-400 bg-zinc-900' : 'text-zinc-400 hover:text-emerald-400');
+      bDont.className = 'px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1 ' + (filter === 'DONT' ? 'text-rose-400 bg-zinc-900' : 'text-zinc-400 hover:text-rose-400');
+
+      renderReminders();
+    }
+
+    function renderReminders() {
+      const listEl = document.getElementById('remindersList');
+      const emptyEl = document.getElementById('remindersEmptyState');
+      listEl.innerHTML = '';
+
+      const filtered = reminders.filter(r => {
+        if (currentReminderFilter === 'DO') return r.type === 'DO';
+        if (currentReminderFilter === 'DONT') return r.type === 'DONT';
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      filtered.forEach(r => {
+        const isDo = r.type === 'DO';
+        const isDone = r.completed === true;
+
+        const item = document.createElement('div');
+        item.className = `clean-card p-3.5 sm:p-4 flex items-center justify-between gap-3 border transition ${isDone ? 'opacity-50' : ''} ${isDo ? 'border-emerald-500/20' : 'border-rose-500/20'}`;
+        item.innerHTML = `
+          <div class="flex items-center gap-3 truncate">
+            <button onclick="toggleReminder('${r.id}')" class="w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 transition ${isDone ? 'bg-emerald-500 border-emerald-500 text-black' : (isDo ? 'border-emerald-500/40 text-transparent hover:border-emerald-500' : 'border-rose-500/40 text-transparent hover:border-rose-500')}">
+              <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3] ${isDone ? '' : 'hidden'}"></i>
+            </button>
+            <div class="truncate">
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${isDo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}">
+                  ${isDo ? 'Fazer' : 'NÃO fazer'}
+                </span>
+                <span class="text-xs sm:text-sm font-semibold ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'} truncate">
+                  ${escapeHtml(r.title)}
+                </span>
+              </div>
+              ${r.date ? `<div class="text-[10px] text-zinc-500 mt-0.5">Prazo: ${formatDate(r.date)}</div>` : ''}
+            </div>
+          </div>
+
+          <button onclick="deleteReminder('${r.id}')" class="text-zinc-600 hover:text-rose-400 p-1.5 transition shrink-0">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        listEl.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    window.toggleReminder = function(id) {
+      const r = reminders.find(item => item.id === id);
+      if (r) {
+        r.completed = !r.completed;
+        saveData();
+        renderReminders();
+      }
+    };
+
+    window.deleteReminder = function(id) {
+      reminders = reminders.filter(r => r.id !== id);
+      saveData();
+      renderReminders();
+      showToast('Lembrete excluído.');
+    };
+
+    // Render Love View
+    function renderLove() {
+      let total = 0;
+      loveMoments.forEach(m => total += parseFloat(m.amount || 0));
+
+      document.getElementById('loveTotalSpent').textContent = formatCurrency(total);
+      document.getElementById('loveTotalCount').textContent = loveMoments.length;
+
+      const listEl = document.getElementById('loveMomentsList');
+      const emptyEl = document.getElementById('loveEmptyState');
+      listEl.innerHTML = '';
+
+      if (loveMoments.length === 0) {
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      loveMoments.forEach(m => {
+        const row = document.createElement('div');
+        row.className = 'py-3 flex items-center justify-between gap-3 group';
+        row.innerHTML = `
+          <div class="truncate">
+            <div class="text-xs sm:text-sm font-semibold text-rose-200 truncate flex items-center gap-1.5">
+              <span>${escapeHtml(m.description)}</span>
+              <span class="text-rose-400 text-[10px]">❤️</span>
+            </div>
+            <div class="text-[10px] text-zinc-500">
+              ${formatDate(m.date)} ${m.note ? '&bull; "' + escapeHtml(m.note) + '"' : ''}
+            </div>
+          </div>
+          <div class="flex items-center gap-2.5 shrink-0">
+            <span class="text-xs sm:text-sm font-bold text-rose-400">${formatCurrency(m.amount)}</span>
+            <button onclick="deleteLoveMoment('${m.id}')" class="text-zinc-600 hover:text-rose-400 p-1.5 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    function renderAll() {
+      populateMonthDropdowns();
+      populateCategorySelect();
+      renderDashboard();
+      renderSummary();
+      renderGoals();
+      renderReminders();
+      renderLove();
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Deletion Helpers
+    window.deleteTransaction = function(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      loveMoments = loveMoments.filter(m => m.id !== id);
+      saveData();
+      renderAll();
+      showToast('Lançamento excluído.');
+    };
+
+    window.deleteLoveMoment = function(id) {
+      loveMoments = loveMoments.filter(m => m.id !== id);
+      transactions = transactions.filter(t => t.id !== id);
+      saveData();
+      renderAll();
+      showToast('Momento excluído.');
+    };
+
+    window.deleteGoal = function(id) {
+      goals = goals.filter(g => g.id !== id);
+      saveData();
+      renderGoals();
+      showToast('Meta excluída.');
+    };
+
+    // FORM SUBMISSIONS
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderAll();
+
+      // Main Action Header Click
+      document.getElementById('mainActionBtn').addEventListener('click', () => {
+        if (currentView === 'love') openLoveModal();
+        else if (currentView === 'goals') openNewGoalModal();
+        else if (currentView === 'reminders') openReminderModal();
+        else openTransactionModal('EXPENSE');
+      });
+
+      // Transaction Form
+      document.getElementById('txForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const type = document.getElementById('txTypeInput').value;
+        const desc = document.getElementById('txDescInput').value.trim();
+        const amount = parseFloat(document.getElementById('txAmountInput').value);
+        const date = document.getElementById('txDateInput').value;
+        const category = document.getElementById('txCategoryInput').value;
+
+        if (!desc || isNaN(amount) || amount <= 0) {
+          alert('Por favor, informe a descrição e um valor válido.');
+          return;
+        }
+
+        const id = Date.now().toString();
+        transactions.unshift({ id, type, description: desc, amount, date, category });
+
+        if (category === 'Meu Maior Gasto ❤️') {
+          loveMoments.unshift({ id, description: desc, amount, date, note: '' });
+        }
+
+        // Auto select the month of the transaction so it appears immediately
+        if (date && date.length >= 7) {
+          selectedDashboardMonth = date.substring(0, 7);
+        }
+
+        saveData();
+        closeTransactionModal();
+        renderAll();
+        showToast(`${type === 'EXPENSE' ? 'Despesa' : 'Receita'} de ${formatCurrency(amount)} salva!`);
+      });
+
+      // New Category Form
+      document.getElementById('newCategoryForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('newCategoryNameInput').value.trim();
+        if (!name) return;
+
+        if (categories.includes(name)) {
+          alert('Esta categoria já existe!');
+          return;
+        }
+
+        categories.push(name);
+        saveData();
+        renderCategoryTags();
+        populateCategorySelect();
+        document.getElementById('newCategoryNameInput').value = '';
+        showToast(`Categoria "${name}" criada!`);
+      });
+
+      // Goal Form
+      document.getElementById('goalForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('goalTitleInput').value.trim();
+        const targetAmount = parseFloat(document.getElementById('goalTargetInput').value);
+        const currentAmount = parseFloat(document.getElementById('goalCurrentInput').value) || 0;
+
+        if (!title || isNaN(targetAmount) || targetAmount <= 0) {
+          alert('Por favor, informe o nome e valor alvo da meta.');
+          return;
+        }
+
+        goals.unshift({ id: Date.now().toString(), title, targetAmount, currentAmount });
+        saveData();
+        closeGoalModal();
+        renderGoals();
+        showToast(`Meta "${title}" criada com sucesso!`);
+      });
+
+      // Deposit Goal Form
+      document.getElementById('depositForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('depositGoalId').value;
+        const amount = parseFloat(document.getElementById('depositAmountInput').value);
+
+        if (isNaN(amount) || amount <= 0) {
+          alert('Por favor, digite um valor válido.');
+          return;
+        }
+
+        const g = goals.find(item => item.id === id);
+        if (g) {
+          g.currentAmount = (parseFloat(g.currentAmount) || 0) + amount;
+          saveData();
+          closeDepositModal();
+          renderGoals();
+          showToast(`+ ${formatCurrency(amount)} guardados na meta "${g.title}"!`);
+        }
+      });
+
+      // Reminder Form
+      document.getElementById('reminderForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const type = document.getElementById('reminderTypeInput').value;
+        const title = document.getElementById('reminderTitleInput').value.trim();
+        const date = document.getElementById('reminderDateInput').value;
+
+        if (!title) {
+          alert('Por favor, descreva o lembrete.');
+          return;
+        }
+
+        reminders.unshift({
+          id: Date.now().toString(),
+          type,
+          title,
+          date,
+          completed: false
+        });
+
+        saveData();
+        closeReminderModal();
+        renderReminders();
+        showToast('Lembrete salvo com sucesso!');
+      });
+
+      // Love Form
+      document.getElementById('loveForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const desc = document.getElementById('loveDescInput').value.trim();
+        const amount = parseFloat(document.getElementById('loveAmountInput').value);
+        const date = document.getElementById('loveDateInput').value;
+        const note = document.getElementById('loveNoteInput').value.trim();
+
+        if (!desc || isNaN(amount) || amount <= 0) {
+          alert('Por favor, informe a descrição e um valor válido.');
+          return;
+        }
+
+        const id = Date.now().toString();
+        loveMoments.unshift({ id, description: desc, amount, date, note });
+        transactions.unshift({ id, type: 'EXPENSE', description: desc, amount, date, category: 'Meu Maior Gasto ❤️' });
+
+        saveData();
+        closeLoveModal();
+        renderAll();
+        showToast(`❤️ Mimo de ${formatCurrency(amount)} salvo!`);
+      });
+
+      // Voice Assistant
+      document.getElementById('voiceBtn').addEventListener('click', startQuickVoice);
+    });
+
+    // Voice Helper
+    function startQuickVoice() {
+      if (!SpeechRecognition) {
+        const text = prompt('Comando rápido por texto (Ex: "Gastei 50 no almoço"):');
+        if (text) handleVoiceText(text);
+        return;
+      }
+
+      if (!recognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.onresult = (e) => {
+          const text = e.results[0][0].transcript;
+          handleVoiceText(text);
+        };
+        recognition.onerror = () => {
+          const text = prompt('Digite seu comando (Ex: "Gastei 50 no almoço"):');
+          if (text) handleVoiceText(text);
+        };
+      }
+      try {
+        showToast('🎙️ Ouvindo... Fale agora.');
+        recognition.start();
+      } catch(e){}
+    }
+
+    function handleVoiceText(text) {
+      const lower = text.toLowerCase();
+      let amount = 0;
+      const m = lower.match(/(?:r\$\s*)?(\d+(?:[.,]\d+)?)/);
+      if (m && m[1]) amount = parseFloat(m[1].replace(',', '.'));
+
+      if (amount <= 0) {
+        alert('Não identifiquei o valor. Tente dizer por exemplo: "Gastei 45 no almoço".');
+        return;
+      }
+
+      const isIncome = ['recebi', 'receber', 'salario', 'salário', 'ganhei'].some(w => lower.includes(w));
+      const isLove = ['com ela', 'pra ela', 'namorada', 'amor', 'mimo'].some(w => lower.includes(w));
+
+      const id = Date.now().toString();
+      const date = new Date().toISOString().split('T')[0];
+      const desc = text.charAt(0).toUpperCase() + text.slice(1);
+
+      if (isLove) {
+        loveMoments.unshift({ id, description: desc, amount, date, note: '' });
+        transactions.unshift({ id, type: 'EXPENSE', description: desc, amount, date, category: 'Meu Maior Gasto ❤️' });
+        showToast(`❤️ Gasto com ela de ${formatCurrency(amount)} salvo!`);
+      } else {
+        transactions.unshift({
+          id,
+          type: isIncome ? 'INCOME' : 'EXPENSE',
+          description: desc,
+          amount,
+          date,
+          category: isIncome ? 'Salário' : 'Alimentação'
+        });
+        showToast(`${isIncome ? 'Receita' : 'Despesa'} de ${formatCurrency(amount)} salva!`);
+      }
+
+      saveData();
+      renderAll();
+    }
+
+    // Backup & Restore
+    function openBackupModal() {
+      document.getElementById('backupModal').classList.remove('hidden');
+    }
+    function closeBackupModal() {
+      document.getElementById('backupModal').classList.add('hidden');
+    }
+
+    function downloadBackup() {
+      const data = {
+        transactions,
+        goals,
+        loveMoments,
+        reminders,
+        categories,
+        exportedAt: new Date().toISOString()
+      };
+
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const now = new Date();
+      const dateTag = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      a.href = url;
+      a.download = `finflow-backup-${dateTag}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Backup baixado com sucesso!');
+    }
+
+    function restoreBackupFromFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && (parsed.transactions || parsed.goals || parsed.reminders || parsed.loveMoments)) {
+            if (Array.isArray(parsed.transactions)) transactions = parsed.transactions;
+            if (Array.isArray(parsed.goals)) goals = parsed.goals;
+            if (Array.isArray(parsed.loveMoments)) loveMoments = parsed.loveMoments;
+            if (Array.isArray(parsed.reminders)) reminders = parsed.reminders;
+            if (Array.isArray(parsed.categories)) categories = parsed.categories;
+
+            saveData();
+            closeBackupModal();
+            renderAll();
+            showToast('✅ Dados restaurados com sucesso!');
+          } else {
+            alert('Arquivo de backup inválido.');
+          }
+        } catch (err) {
+          alert('Erro ao ler o arquivo de backup.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
